@@ -38,20 +38,25 @@ def login_required(f):
     return decorated_function
 
 def get_db_conn():
-    """Establishes a PostgreSQL database connection."""
+    """Establishes a PostgreSQL database connection with SSL required."""
     try:
-        # CHANGED: Use psycopg2.connect and 'dbname' instead of 'db'
-        conn = psycopg2.connect(host=config.DB_HOST,
-                               port=config.DB_PORT,
-                               user=config.DB_USER,
-                               password=config.DB_PASS,
-                               dbname=config.DB_NAME)
+        # FIX: Added sslmode='require' to force an SSL connection, 
+        # which is typically required by cloud providers like DigitalOcean.
+        conn = psycopg2.connect(
+            host=config.DB_HOST,
+            port=config.DB_PORT,
+            user=config.DB_USER,
+            password=config.DB_PASS,
+            dbname=config.DB_NAME,
+            sslmode='require'  # <--- THIS IS THE CRITICAL ADDITION
+        )
         # Set autocommit property for conn to True
         conn.autocommit = True
         logger.info("Database connection established successfully.")
         return conn
     except Exception as e:
         logger.error(f"Database connection failed: {e}")
+        # Re-raise the exception so Flask catches it and logs the source of the 500 error
         raise
 
 # Helper function to get a cursor that returns dictionaries
