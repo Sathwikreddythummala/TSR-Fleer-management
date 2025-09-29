@@ -1311,6 +1311,931 @@ def monthly_vehicle_expenses(month):
     finally:
         conn.close()
 
+# Edit spending - GET data for editing - MISSING ROUTE
+@app.route('/get_spending/<int:id>')
+@login_required
+def get_spending(id):
+    conn = get_db_conn()
+    try:
+        with get_dict_cursor(conn) as cur:
+            cur.execute("SELECT * FROM spendings WHERE id=%s", (id,))
+            spending = cur.fetchone()
+            
+            if not spending:
+                return jsonify({'success': False, 'error': 'Spending record not found'}), 404
+            
+            return jsonify({
+                'success': True,
+                'spending': {
+                    'id': spending['id'],
+                    'date': spending['date'].strftime('%Y-%m-%d'),
+                    'expense_month': spending['expense_month'].strftime('%Y-%m') if spending['expense_month'] else '',
+                    'vehicle_id': spending['vehicle_id'],
+                    'category': spending['category'],
+                    'reason': spending['reason'] or '',
+                    'amount': float(spending['amount']),
+                    'spended_by': spending['spended_by'] or '',
+                    'mode': spending['mode'] or ''
+                }
+            })
+    except Exception as e:
+        app.logger.error(f"Error in get_spending: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
+
+# Update spending - POST to save changes - MISSING ROUTE
+@app.route('/update_spending/<int:id>', methods=['POST'])
+@login_required
+def update_spending(id):
+    conn = get_db_conn()
+    try:
+        with conn.cursor() as cur:
+            # Get form data
+            date_str = request.form.get('date')
+            expense_month_str = request.form.get('expense_month')
+            vehicle_id = request.form.get('vehicle_id')
+            category = request.form.get('category')
+            reason = request.form.get('reason', '')
+            amount = request.form.get('amount')
+            spended_by = request.form.get('spended_by')
+            mode = request.form.get('mode')
+            
+            # Validate required fields
+            if not all([date_str, expense_month_str, vehicle_id, category, amount]):
+                return jsonify({'success': False, 'error': 'Missing required fields'})
+            
+            try:
+                payment_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                expense_month = datetime.strptime(expense_month_str, '%Y-%m').date().replace(day=1)
+                amount_decimal = Decimal(amount)
+            except (ValueError, TypeError) as e:
+                return jsonify({'success': False, 'error': 'Invalid date or amount format'})
+            
+            # Check if record exists
+            cur.execute("SELECT id FROM spendings WHERE id=%s", (id,))
+            if not cur.fetchone():
+                return jsonify({'success': False, 'error': 'Spending record not found'})
+            
+            # Handle NULL values for unpaid payments
+            if not spended_by or not mode:
+                cur.execute("""
+                    UPDATE spendings 
+                    SET date=%s, expense_month=%s, vehicle_id=%s, category=%s, 
+                    reason=%s, amount=%s, spended_by=NULL, mode=NULL 
+                    WHERE id=%s
+                """, (payment_date, expense_month, vehicle_id, category, reason, amount_decimal, id))
+            else:
+                cur.execute("""
+                    UPDATE spendings 
+                    SET date=%s, expense_month=%s, vehicle_id=%s, category=%s, 
+                    reason=%s, amount=%s, spended_by=%s, mode=%s 
+                    WHERE id=%s
+                """, (payment_date, expense_month, vehicle_id, category, reason, amount_decimal, spended_by, mode, id))
+            
+            conn.commit()
+            return jsonify({'success': True, 'message': 'Spending updated successfully'})
+            
+    except Exception as e:
+        conn.rollback()
+        app.logger.error(f"Error in update_spending: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        conn.close()
+
+# AJAX toggle mark/unmark - MISSING ROUTE
+@app.route('/toggle_mark', methods=['POST'])
+@login_required
+def toggle_mark():
+    sid = request.json.get('id')
+    conn = get_db_conn()
+    try:
+        with get_dict_cursor(conn) as cur:
+            cur.execute("SELECT marked FROM spendings WHERE id=%s", (sid,))
+            r = cur.fetchone()
+            if not r:
+                return jsonify({'success': False}), 404
+            new_mark = not r['marked']
+            cur.execute("UPDATE spendings SET marked=%s WHERE id=%s", (new_mark, sid))
+            conn.commit()
+        return jsonify({'success': True, 'marked': new_mark})
+    except Exception as e:
+        app.logger.error(f"Error in toggle_mark: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        conn.close()
+
+@app.route('/edit_spending/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_spending(id):
+    conn = get_db_conn()
+    try:
+        with get_dict_cursor(conn) as cur:
+            if request.method == 'POST':
+                date_str = request.form.get('date')
+                expense_month_str = request.form.get('expense_month')
+                vehicle_id = request.form.get('vehicle_id')
+                category = request.form.get('category')
+                reason = request.form.get('reason', '')
+                amount = request.form.get('amount')
+                spended_by = request.form.get('spended_by')
+                mode = request.form.get('mode')
+                
+                if not all([date_str, expense_month_str, vehicle_id, category, amount]):
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return jsonify({'success': False, 'error': 'Missing required fields'})
+                    flash('Missing required fields', 'error')
+                    return redirect(url_for('spendings'))
+                
+                try:
+                    payment_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                    expense_month = datetime.strptime(expense_month_str, '%Y-%m').date().replace(day=1)
+                    amount_decimal = Decimal(amount)
+                except (ValueError, TypeError) as e:
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return jsonify({'success': False, 'error': 'Invalid date or amount format'})
+                    flash('Invalid date or amount format', 'error')
+                    return redirect(url_for('spendings'))
+                
+                if not spended_by or not mode:
+                    cur.execute("""
+                        UPDATE spendings 
+                        SET date=%s, expense_month=%s, vehicle_id=%s, category=%s, reason=%s, amount=%s, 
+                        spended_by=NULL, mode=NULL 
+                        WHERE id=%s
+                    """, (payment_date, expense_month, vehicle_id, category, reason, amount_decimal, id))
+                else:
+                    cur.execute("""
+                        UPDATE spendings 
+                        SET date=%s, expense_month=%s, vehicle_id=%s, category=%s, reason=%s, amount=%s, 
+                        spended_by=%s, mode=%s 
+                        WHERE id=%s
+                    """, (payment_date, expense_month, vehicle_id, category, reason, amount_decimal, spended_by, mode, id))
+                
+                conn.commit()
+                
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({'success': True})
+                
+                flash('Spending updated successfully', 'success')
+                return redirect(url_for('spendings'))
+            
+            cur.execute("SELECT * FROM spendings WHERE id=%s", (id,))
+            spending = cur.fetchone()
+            
+            if not spending:
+                return jsonify({'success': False, 'error': 'Spending record not found'}), 404
+            
+            return jsonify({
+                'success': True,
+                'spending': {
+                    'id': spending['id'],
+                    'date': spending['date'].strftime('%Y-%m-%d'),
+                    'expense_month': spending['expense_month'].strftime('%Y-%m') if spending['expense_month'] else '',
+                    'vehicle_id': spending['vehicle_id'],
+                    'category': spending['category'],
+                    'reason': spending['reason'] or '',
+                    'amount': float(spending['amount']),
+                    'spended_by': spending['spended_by'] or '',
+                    'mode': spending['mode'] or ''
+                }
+            })
+            
+    except Exception as e:
+        conn.rollback()
+        app.logger.error(f"Error in edit_spending: {str(e)}")
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'error': str(e)}), 500
+        
+        flash(f'Error updating spending: {str(e)}', 'error')
+        return redirect(url_for('spendings'))
+    finally:
+        conn.close()
+@app.route('/incoming', methods=['GET','POST'])
+@login_required
+def incoming():
+    conn = get_db_conn()
+    try:
+        with get_dict_cursor(conn) as cur:
+            if request.method == 'POST' and request.form.get('action')=='add_company':
+                name = request.form.get('company_name').strip()
+                cur.execute("INSERT INTO companies (name) VALUES (%s)", (name,))
+                return redirect(url_for('incoming'))
+
+            if request.method == 'POST' and request.form.get('action')=='add_payment':
+                company_id = request.form.get('company_id')
+                vehicle_id = request.form.get('vehicle_id') or None
+                date = datetime.strptime(request.form.get('date'), '%Y-%m-%d').date()
+                amount = request.form.get('amount')
+                cur.execute("INSERT INTO payments (company_id,vehicle_id,date,amount) VALUES (%s,%s,%s,%s)", (company_id, vehicle_id, date, amount))
+                return redirect(url_for('incoming'))
+
+            cur.execute("SELECT id,name FROM companies ORDER BY name")
+            companies = cur.fetchall()
+            cur.execute("SELECT id, vehicle_no FROM vehicles ORDER BY vehicle_no")
+            vehicles = cur.fetchall()
+
+            cur.execute("SELECT COALESCE(SUM(amount),0) as credited FROM payments")
+            credited = cur.fetchone()['credited'] or 0
+            cur.execute("SELECT COALESCE(SUM(amount),0) as debited FROM spendings WHERE spended_by IS NOT NULL AND mode IS NOT NULL")
+            debited = cur.fetchone()['debited'] or 0
+            balance = Decimal(credited) - Decimal(debited)
+            
+            cur.execute("SELECT COALESCE(SUM(amount),0) AS tsr_spent FROM spendings WHERE spended_by='TSR'")
+            tsr_spent = cur.fetchone()['tsr_spent'] or 0
+
+            cur.execute("SELECT COALESCE(SUM(amount),0) AS msr_spent FROM spendings WHERE spended_by='MSR'")
+            msr_spent = cur.fetchone()['msr_spent'] or 0
+
+            tsr_balance = Decimal(credited) - Decimal(tsr_spent)
+            msr_balance = Decimal(credited) - Decimal(msr_spent)
+            
+            cur.execute("SELECT p.*, c.name as company_name, v.vehicle_no FROM payments p LEFT JOIN companies c ON p.company_id=c.id LEFT JOIN vehicles v ON p.vehicle_id=v.id ORDER BY p.date DESC")
+            payments = cur.fetchall()
+    except Exception as e:
+        app.logger.error(f"Error in incoming route: {str(e)}")
+        flash(f'An error occurred: {str(e)}', 'error')
+    finally:
+        conn.close()
+    
+    today = datetime.now().strftime('%Y-%m-%d')
+    return render_template('incoming.html', companies=companies, vehicles=vehicles, 
+                          credited=float(credited), debited=float(debited), balance=float(balance),
+                          tsr_spent=float(tsr_spent or 0), msr_spent=float(msr_spent or 0),
+                          tsr_balance=float(tsr_balance or 0), msr_balance=float(msr_balance or 0),
+                          payments=payments, today=today)
+
+@app.route('/get_employee_advance/<int:id>')
+@login_required
+def get_employee_advance(id):
+    conn = get_db_conn()
+    try:
+        with get_dict_cursor(conn) as cur:
+            cur.execute("SELECT * FROM employee_advances WHERE id=%s", (id,))
+            advance = cur.fetchone()
+            
+            if not advance:
+                return jsonify({'success': False, 'error': 'Advance record not found'})
+            
+            return jsonify({
+                'success': True,
+                'advance': {
+                    'id': advance['id'],
+                    'employee_name': advance['employee_name'],
+                    'date': advance['date'].strftime('%Y-%m-%d'),
+                    'amount': float(advance['amount']),
+                    'purpose': advance['purpose'] or ''
+                }
+            })
+    except Exception as e:
+        app.logger.error(f"Error in get_employee_advance: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        conn.close()
+
+@app.route('/edit_employee_advance/<int:id>', methods=['POST'])
+@login_required
+def edit_employee_advance(id):
+    conn = get_db_conn()
+    try:
+        with conn.cursor() as cur:
+            employee_name = request.form.get('employee_name')
+            date_str = request.form.get('date')
+            amount = request.form.get('amount')
+            purpose = request.form.get('purpose')
+            
+            if not all([employee_name, date_str, amount]):
+                return jsonify({'success': False, 'error': 'Missing required fields'})
+            
+            dt = datetime.strptime(date_str, '%Y-%m-%d').date()
+            
+            cur.execute("""
+                UPDATE employee_advances 
+                SET employee_name=%s, date=%s, amount=%s, purpose=%s 
+                WHERE id=%s
+            """, (employee_name, dt, amount, purpose, id))
+            
+            conn.commit()
+            return jsonify({'success': True, 'message': 'Advance updated successfully'})
+            
+    except Exception as e:
+        conn.rollback()
+        app.logger.error(f"Error in edit_employee_advance: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        conn.close()
+
+@app.route('/delete_employee_advance/<int:id>', methods=['DELETE'])
+@login_required
+def delete_employee_advance(id):
+    conn = get_db_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM employee_advances WHERE id=%s", (id,))
+            conn.commit()
+            return jsonify({'success': True, 'message': 'Advance deleted successfully'})
+    except Exception as e:
+        conn.rollback()
+        app.logger.error(f"Error in delete_employee_advance: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        conn.close()
+
+@app.route('/get_hired_vehicle_transaction/<int:transaction_id>')
+@login_required
+def get_hired_vehicle_transaction(transaction_id):
+    conn = get_db_conn()
+    try:
+        with get_dict_cursor(conn) as cur:
+            cur.execute("SELECT * FROM hired_vehicle_transactions WHERE id = %s", (transaction_id,))
+            transaction = cur.fetchone()
+            
+            if not transaction:
+                return jsonify({'success': False, 'error': 'Transaction not found'})
+            
+            return jsonify({
+                'success': True,
+                'transaction': {
+                    'id': transaction['id'],
+                    'transaction_type': transaction['transaction_type'],
+                    'transaction_date': transaction['transaction_date'].strftime('%Y-%m-%d'),
+                    'month_year': transaction['month_year'].strftime('%Y-%m'),
+                    'amount': float(transaction['amount']),
+                    'description': transaction['description'] or '',
+                    'reference_no': transaction['reference_no'] or ''
+                }
+            })
+    except Exception as e:
+        app.logger.error(f"Error in get_hired_vehicle_transaction: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        conn.close()
+
+@app.route('/update_hired_vehicle_transaction', methods=['POST'])
+@login_required
+def update_hired_vehicle_transaction():
+    conn = get_db_conn()
+    try:
+        transaction_id = request.form.get('transaction_id')
+        transaction_type = request.form.get('transaction_type')
+        transaction_date = datetime.strptime(request.form.get('transaction_date'), '%Y-%m-%d').date()
+        month_year = datetime.strptime(request.form.get('month_year'), '%Y-%m').date().replace(day=1)
+        amount = request.form.get('amount')
+        description = request.form.get('description', '').strip()
+        reference_no = request.form.get('reference_no', '').strip()
+        
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE hired_vehicle_transactions 
+                SET transaction_type = %s, transaction_date = %s, month_year = %s, 
+                    amount = %s, description = %s, reference_no = %s
+                WHERE id = %s
+            """, (transaction_type, transaction_date, month_year, amount, description, reference_no, transaction_id))
+            
+            conn.commit()
+            
+        return jsonify({'success': True, 'message': 'Transaction updated successfully'})
+        
+    except Exception as e:
+        conn.rollback()
+        app.logger.error(f"Error in update_hired_vehicle_transaction: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        conn.close()
+
+@app.route('/delete_hired_vehicle_transaction/<int:transaction_id>', methods=['DELETE'])
+@login_required
+def delete_hired_vehicle_transaction(transaction_id):
+    conn = get_db_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM hired_vehicle_transactions WHERE id = %s", (transaction_id,))
+            conn.commit()
+            
+        return jsonify({'success': True, 'message': 'Transaction deleted successfully'})
+        
+    except Exception as e:
+        conn.rollback()
+        app.logger.error(f"Error in delete_hired_vehicle_transaction: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        conn.close()
+
+@app.route('/get_company_sale/<int:sale_id>')
+@login_required
+def get_company_sale(sale_id):
+    conn = get_db_conn()
+    try:
+        with get_dict_cursor(conn) as cur:
+            cur.execute("SELECT * FROM company_sales WHERE id = %s", (sale_id,))
+            sale = cur.fetchone()
+            
+            if not sale:
+                return jsonify({'success': False, 'error': 'Sale record not found'})
+            
+            return jsonify({
+                'success': True,
+                'sale': {
+                    'id': sale['id'],
+                    'sale_date': sale['sale_date'].strftime('%Y-%m-%d'),
+                    'company_name': sale['company_name'],
+                    'invoice_number': sale['invoice_number'] or '',
+                    'sale_amount': float(sale['sale_amount']),
+                    'month_year': sale['month_year'].strftime('%Y-%m'),
+                    'description': sale['description'] or ''
+                }
+            })
+    except Exception as e:
+        app.logger.error(f"Error in get_company_sale: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        conn.close()
+
+@app.route('/update_company_sale', methods=['POST'])
+@login_required
+def update_company_sale():
+    conn = get_db_conn()
+    try:
+        sale_id = request.form.get('sale_id')
+        sale_date = datetime.strptime(request.form.get('sale_date'), '%Y-%m-%d').date()
+        company_name = request.form.get('company_name').strip()
+        invoice_number = request.form.get('invoice_number', '').strip()
+        sale_amount = request.form.get('sale_amount')
+        month_year = datetime.strptime(request.form.get('month_year'), '%Y-%m').date().replace(day=1)
+        description = request.form.get('description', '').strip()
+        
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE company_sales 
+                SET sale_date = %s, company_name = %s, invoice_number = %s, 
+                    sale_amount = %s, month_year = %s, description = %s
+                WHERE id = %s
+            """, (sale_date, company_name, invoice_number, sale_amount, month_year, description, sale_id))
+            
+            conn.commit()
+            
+        return jsonify({'success': True, 'message': 'Sale updated successfully'})
+        
+    except Exception as e:
+        conn.rollback()
+        app.logger.error(f"Error in update_company_sale: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        conn.close()
+
+@app.route('/delete_company_sale/<int:sale_id>', methods=['DELETE'])
+@login_required
+def delete_company_sale(sale_id):
+    conn = get_db_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM company_sales WHERE id = %s", (sale_id,))
+            conn.commit()
+            
+        return jsonify({'success': True, 'message': 'Sale deleted successfully'})
+        
+    except Exception as e:
+        conn.rollback()
+        app.logger.error(f"Error in delete_company_sale: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        conn.close()
+
+@app.route('/get_company_payment/<int:payment_id>')
+@login_required
+def get_company_payment(payment_id):
+    conn = get_db_conn()
+    try:
+        with get_dict_cursor(conn) as cur:
+            cur.execute("SELECT * FROM company_payments WHERE id = %s", (payment_id,))
+            payment = cur.fetchone()
+            
+            if not payment:
+                return jsonify({'success': False, 'error': 'Payment record not found'})
+            
+            return jsonify({
+                'success': True,
+                'payment': {
+                    'id': payment['id'],
+                    'payment_date': payment['payment_date'].strftime('%Y-%m-%d'),
+                    'company_name': payment['company_name'],
+                    'received_amount': float(payment['received_amount']),
+                    'payment_mode': payment['payment_mode'],
+                    'reference_number': payment['reference_number'] or '',
+                    'month_year': payment['month_year'].strftime('%Y-%m'),
+                    'description': payment['description'] or ''
+                }
+            })
+    except Exception as e:
+        app.logger.error(f"Error in get_company_payment: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        conn.close()
+
+@app.route('/update_company_payment', methods=['POST'])
+@login_required
+def update_company_payment():
+    conn = get_db_conn()
+    try:
+        payment_id = request.form.get('payment_id')
+        payment_date = datetime.strptime(request.form.get('payment_date'), '%Y-%m-%d').date()
+        company_name = request.form.get('company_name').strip()
+        received_amount = request.form.get('received_amount')
+        payment_mode = request.form.get('payment_mode')
+        reference_number = request.form.get('reference_number', '').strip()
+        month_year = datetime.strptime(request.form.get('month_year'), '%Y-%m').date().replace(day=1)
+        description = request.form.get('description', '').strip()
+        
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE company_payments 
+                SET payment_date = %s, company_name = %s, received_amount = %s, 
+                    payment_mode = %s, reference_number = %s, month_year = %s, description = %s
+                WHERE id = %s
+            """, (payment_date, company_name, received_amount, payment_mode, reference_number, month_year, description, payment_id))
+            
+            conn.commit()
+            
+        return jsonify({'success': True, 'message': 'Payment updated successfully'})
+        
+    except Exception as e:
+        conn.rollback()
+        app.logger.error(f"Error in update_company_payment: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        conn.close()
+
+@app.route('/delete_company_payment/<int:payment_id>', methods=['DELETE'])
+@login_required
+def delete_company_payment(payment_id):
+    conn = get_db_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM company_payments WHERE id = %s", (payment_id,))
+            conn.commit()
+            
+        return jsonify({'success': True, 'message': 'Payment deleted successfully'})
+        
+    except Exception as e:
+        conn.rollback()
+        app.logger.error(f"Error in delete_company_payment: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        conn.close()
+
+@app.route('/api/hired_vehicles_audit')
+@login_required
+def api_hired_vehicles_audit():
+    conn = get_db_conn()
+    try:
+        month = request.args.get('month', datetime.now().strftime('%Y-%m'))
+        vehicle_id = request.args.get('vehicle_id', 'all')
+        
+        month_date = datetime.strptime(month, '%Y-%m').date().replace(day=1)
+        
+        with get_dict_cursor(conn) as cur:
+            if vehicle_id == 'all':
+                cur.execute("""
+                    SELECT 
+                        hv.id,
+                        hv.vehicle_no,
+                        hv.owner_name,
+                        COALESCE(SUM(CASE WHEN t.transaction_type = 'sale' THEN t.amount ELSE 0 END), 0) as total_sales,
+                        COALESCE(SUM(CASE WHEN t.transaction_type = 'payment' THEN t.amount ELSE 0 END), 0) as total_payments
+                    FROM hired_vehicles hv
+                    LEFT JOIN hired_vehicle_transactions t ON hv.id = t.hired_vehicle_id AND t.month_year = %s
+                    GROUP BY hv.id, hv.vehicle_no, hv.owner_name
+                    ORDER BY hv.vehicle_no
+                """, (month_date,))
+                
+                summary = cur.fetchall()
+                
+                return jsonify({
+                    'summary': summary,
+                    'month': month
+                })
+                
+            else:
+                cur.execute("""
+                    SELECT 
+                        hv.id,
+                        hv.vehicle_no,
+                        hv.owner_name,
+                        COALESCE(SUM(CASE WHEN t.transaction_type = 'sale' THEN t.amount ELSE 0 END), 0) as total_sales,
+                        COALESCE(SUM(CASE WHEN t.transaction_type = 'payment' THEN t.amount ELSE 0 END), 0) as total_payments
+                    FROM hired_vehicles hv
+                    LEFT JOIN hired_vehicle_transactions t ON hv.id = t.hired_vehicle_id AND t.month_year = %s
+                    WHERE hv.id = %s
+                    GROUP BY hv.id, hv.vehicle_no, hv.owner_name
+                """, (month_date, vehicle_id))
+                
+                summary = cur.fetchall()
+                
+                cur.execute("""
+                    SELECT *
+                    FROM hired_vehicle_transactions
+                    WHERE hired_vehicle_id = %s AND month_year = %s
+                    ORDER BY transaction_date, created_at
+                """, (vehicle_id, month_date))
+                
+                transactions = cur.fetchall()
+                
+                return jsonify({
+                    'summary': summary,
+                    'transactions': transactions,
+                    'month': month
+                })
+                
+    except Exception as e:
+        app.logger.error(f"Error in api_hired_vehicles_audit: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/company_audit')
+@login_required
+def api_company_audit():
+    conn = get_db_conn()
+    try:
+        month = request.args.get('month', datetime.now().strftime('%Y-%m'))
+        company = request.args.get('company', 'all')
+        
+        month_date = datetime.strptime(month, '%Y-%m').date().replace(day=1)
+        
+        with get_dict_cursor(conn) as cur:
+            if company == 'all':
+                cur.execute("""
+                    SELECT 
+                        company_name,
+                        COALESCE(SUM(sale_amount), 0) as sales_amount
+                    FROM company_sales 
+                    WHERE month_year = %s
+                    GROUP BY company_name
+                """, (month_date,))
+                
+                sales_data = cur.fetchall()
+                
+                cur.execute("""
+                    SELECT 
+                        company_name,
+                        COALESCE(SUM(received_amount), 0) as received_amount
+                    FROM company_payments 
+                    WHERE month_year = %s
+                    GROUP BY company_name
+                """, (month_date,))
+                
+                payment_data = cur.fetchall()
+                
+                # Combine data
+                company_dict = {}
+                for row in sales_data:
+                    company_dict[row['company_name']] = {
+                        'company_name': row['company_name'],
+                        'sales_amount': float(row['sales_amount']),
+                        'received_amount': 0
+                    }
+                
+                for row in payment_data:
+                    if row['company_name'] in company_dict:
+                        company_dict[row['company_name']]['received_amount'] = float(row['received_amount'])
+                    else:
+                        company_dict[row['company_name']] = {
+                            'company_name': row['company_name'],
+                            'sales_amount': 0,
+                            'received_amount': float(row['received_amount'])
+                        }
+                
+                companies = list(company_dict.values())
+                for comp in companies:
+                    comp['pending_amount'] = comp['sales_amount'] - comp['received_amount']
+                
+                return jsonify({
+                    'companies': companies,
+                    'month': month
+                })
+                
+            else:
+                cur.execute("""
+                    SELECT 
+                        company_name,
+                        COALESCE(SUM(sale_amount), 0) as sales_amount
+                    FROM company_sales 
+                    WHERE company_name = %s AND month_year = %s
+                    GROUP BY company_name
+                """, (company, month_date))
+                
+                sales_result = cur.fetchone()
+                sales_amount = float(sales_result['sales_amount'] or 0) if sales_result else 0
+                
+                cur.execute("""
+                    SELECT 
+                        company_name,
+                        COALESCE(SUM(received_amount), 0) as received_amount
+                    FROM company_payments 
+                    WHERE company_name = %s AND month_year = %s
+                    GROUP BY company_name
+                """, (company, month_date))
+                
+                payments_result = cur.fetchone()
+                received_amount = float(payments_result['received_amount'] or 0) if payments_result else 0
+                
+                cur.execute("""
+                    SELECT 
+                        'sale' as type,
+                        sale_date as date,
+                        invoice_number as reference,
+                        sale_amount as amount,
+                        description
+                    FROM company_sales 
+                    WHERE company_name = %s AND month_year = %s
+                    
+                    UNION ALL
+                    
+                    SELECT 
+                        'payment' as type,
+                        payment_date as date,
+                        reference_number as reference,
+                        received_amount as amount,
+                        description
+                    FROM company_payments 
+                    WHERE company_name = %s AND month_year = %s
+                    
+                    ORDER BY date
+                """, (company, month_date, company, month_date))
+                
+                transactions = cur.fetchall()
+                
+                return jsonify({
+                    'companies': [{
+                        'company_name': company,
+                        'sales_amount': sales_amount,
+                        'received_amount': received_amount,
+                        'pending_amount': sales_amount - received_amount
+                    }],
+                    'transactions': transactions,
+                    'month': month
+                })
+                
+    except Exception as e:
+        app.logger.error(f"Error in api_company_audit: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/export/hired_vehicles_audit')
+@login_required
+def export_hired_vehicles_audit():
+    conn = get_db_conn()
+    try:
+        month = request.args.get('month', datetime.now().strftime('%Y-%m'))
+        vehicle_id = request.args.get('vehicle_id', 'all')
+        
+        month_date = datetime.strptime(month, '%Y-%m').date().replace(day=1)
+        
+        with get_dict_cursor(conn) as cur:
+            if vehicle_id == 'all':
+                cur.execute("""
+                    SELECT 
+                        hv.vehicle_no,
+                        hv.owner_name,
+                        COALESCE(SUM(CASE WHEN t.transaction_type = 'sale' THEN t.amount ELSE 0 END), 0) as total_sales,
+                        COALESCE(SUM(CASE WHEN t.transaction_type = 'payment' THEN t.amount ELSE 0 END), 0) as total_payments,
+                        COALESCE(SUM(CASE WHEN t.transaction_type = 'sale' THEN t.amount ELSE 0 END), 0) - 
+                        COALESCE(SUM(CASE WHEN t.transaction_type = 'payment' THEN t.amount ELSE 0 END), 0) as net_balance
+                    FROM hired_vehicles hv
+                    LEFT JOIN hired_vehicle_transactions t ON hv.id = t.hired_vehicle_id AND t.month_year = %s
+                    GROUP BY hv.id, hv.vehicle_no, hv.owner_name
+                    ORDER BY hv.vehicle_no
+                """, (month_date,))
+                
+                data = cur.fetchall()
+                filename = f'hired_vehicles_audit_{month}.csv'
+                
+            else:
+                cur.execute("""
+                    SELECT 
+                        t.transaction_date,
+                        t.transaction_type,
+                        t.description,
+                        t.reference_no,
+                        t.amount,
+                        hv.vehicle_no,
+                        hv.owner_name
+                    FROM hired_vehicle_transactions t
+                    JOIN hired_vehicles hv ON t.hired_vehicle_id = hv.id
+                    WHERE t.hired_vehicle_id = %s AND t.month_year = %s
+                    ORDER BY t.transaction_date, t.created_at
+                """, (vehicle_id, month_date))
+                
+                data = cur.fetchall()
+                vehicle_info = data[0] if data else {}
+                filename = f'hired_vehicle_audit_{vehicle_info.get("vehicle_no", "unknown")}_{month}.csv'
+            
+            output = StringIO()
+            if data:
+                writer = csv.DictWriter(output, fieldnames=data[0].keys())
+                writer.writeheader()
+                writer.writerows(data)
+            
+            response = app.response_class(
+                response=output.getvalue(),
+                status=200,
+                mimetype='text/csv',
+                headers={'Content-Disposition': f'attachment;filename={filename}'}
+            )
+            return response
+            
+    except Exception as e:
+        app.logger.error(f"Error exporting hired vehicles audit: {e}")
+        return "Error exporting data", 500
+    finally:
+        conn.close()
+
+@app.route('/export/company_audit')
+@login_required
+def export_company_audit():
+    conn = get_db_conn()
+    try:
+        month = request.args.get('month', datetime.now().strftime('%Y-%m'))
+        company = request.args.get('company', 'all')
+        
+        month_date = datetime.strptime(month, '%Y-%m').date().replace(day=1)
+        
+        with get_dict_cursor(conn) as cur:
+            if company == 'all':
+                cur.execute("""
+                    SELECT 
+                        cs.company_name,
+                        cs.sale_date,
+                        cs.invoice_number,
+                        cs.sale_amount,
+                        cs.description,
+                        cp.payment_date,
+                        cp.received_amount,
+                        cp.payment_mode,
+                        cp.reference_number
+                    FROM company_sales cs
+                    LEFT JOIN company_payments cp ON cs.company_name = cp.company_name AND cs.month_year = cp.month_year
+                    WHERE cs.month_year = %s
+                    ORDER BY cs.company_name, cs.sale_date
+                """, (month_date,))
+                
+                data = cur.fetchall()
+                filename = f'company_audit_{month}.csv'
+                
+            else:
+                cur.execute("""
+                    SELECT 
+                        'sale' as transaction_type,
+                        sale_date as date,
+                        invoice_number as reference,
+                        sale_amount as amount,
+                        description,
+                        NULL as payment_mode
+                    FROM company_sales 
+                    WHERE company_name = %s AND month_year = %s
+                    
+                    UNION ALL
+                    
+                    SELECT 
+                        'payment' as transaction_type,
+                        payment_date as date,
+                        reference_number as reference,
+                        received_amount as amount,
+                        description,
+                        payment_mode
+                    FROM company_payments 
+                    WHERE company_name = %s AND month_year = %s
+                    
+                    ORDER BY date
+                """, (company, month_date, company, month_date))
+                
+                data = cur.fetchall()
+                filename = f'company_audit_{company}_{month}.csv'
+            
+            output = StringIO()
+            if data:
+                writer = csv.DictWriter(output, fieldnames=data[0].keys())
+                writer.writeheader()
+                writer.writerows(data)
+            
+            response = app.response_class(
+                response=output.getvalue(),
+                status=200,
+                mimetype='text/csv',
+                headers={'Content-Disposition': f'attachment;filename={filename}'}
+            )
+            return response
+            
+    except Exception as e:
+        app.logger.error(f"Error exporting company audit: {e}")
+        return "Error exporting data", 500
+    finally:
+        conn.close()
+
+
+
+
 # Initialize database when app starts
 initialize_database()
 
