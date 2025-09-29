@@ -1231,6 +1231,86 @@ def clear_cookies():
     response.set_cookie(app.session_cookie_name, '', expires=0)
     return response
 
+# Monthly expenses report - MISSING ROUTE
+@app.route('/monthly_report')
+@login_required
+def monthly_report():
+    conn = get_db_conn()
+    try:
+        month = request.args.get('month', datetime.now().strftime('%Y-%m'))
+        with get_dict_cursor(conn) as cur:
+            cur.execute("""
+                SELECT s.*, v.vehicle_no 
+                FROM spendings s 
+                JOIN vehicles v ON s.vehicle_id = v.id 
+                WHERE s.expense_month = %s 
+                ORDER BY s.category, s.date
+            """, (datetime.strptime(month, '%Y-%m').date().replace(day=1),))
+            spendings = cur.fetchall()
+            
+            cur.execute("""
+                SELECT COALESCE(SUM(amount),0) as total 
+                FROM spendings 
+                WHERE expense_month = %s
+            """, (datetime.strptime(month, '%Y-%m').date().replace(day=1),))
+            total = cur.fetchone()['total']
+            
+            cur.execute("""
+                SELECT DISTINCT expense_month 
+                FROM spendings 
+                WHERE expense_month IS NOT NULL 
+                ORDER BY expense_month DESC
+            """)
+            available_months = [m['expense_month'].strftime('%Y-%m') for m in cur.fetchall()]
+            
+    except Exception as e:
+        app.logger.error(f"Error in monthly_report: {str(e)}")
+        flash(f'Error generating report: {str(e)}', 'error')
+        return redirect(url_for('index'))
+    finally:
+        conn.close()
+    
+    return render_template('monthly_report.html', 
+                         spendings=spendings, 
+                         total=float(total), 
+                         selected_month=month,
+                         available_months=available_months)
+
+# API: Monthly expenses by vehicle - MISSING ROUTE
+@app.route('/api/monthly_vehicle_expenses/<month>')
+@login_required
+def monthly_vehicle_expenses(month):
+    conn = get_db_conn()
+    try:
+        with get_dict_cursor(conn) as cur:
+            month_date = datetime.strptime(month, '%Y-%m').date().replace(day=1)
+            
+            cur.execute("""
+                SELECT 
+                    v.vehicle_no,
+                    s.expense_month,
+                    SUM(s.amount) as monthly_total
+                FROM spendings s
+                JOIN vehicles v ON s.vehicle_id = v.id
+                WHERE s.expense_month = %s
+                GROUP BY v.vehicle_no, s.expense_month
+                ORDER BY monthly_total DESC
+            """, (month_date,))
+            
+            results = cur.fetchall()
+            for result in results:
+                result['expense_month'] = result['expense_month'].strftime('%Y-%m')
+                if 'monthly_total' in result:
+                    result['monthly_total'] = float(result['monthly_total'])
+                    
+            return jsonify(results)
+            
+    except Exception as e:
+        app.logger.error(f"Error in monthly_vehicle_expenses: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()
+
 # Initialize database when app starts
 initialize_database()
 
