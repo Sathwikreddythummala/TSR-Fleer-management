@@ -1,8 +1,8 @@
-USE tsr_db;
+\c tsr_db;
 
 DROP VIEW IF EXISTS employee_balance;
 
-USE tsr_db;
+\c tsr_db;
 
 -- Drop the existing view
 DROP VIEW IF EXISTS employee_balance;
@@ -40,25 +40,25 @@ WHERE emp.employee_name IS NOT NULL AND emp.employee_name != '';
 
 -- init_db.sql
 CREATE DATABASE IF NOT EXISTS tsr_db;
-USE tsr_db;
+\c tsr_db;
 
 -- Vehicles table
 CREATE TABLE IF NOT EXISTS vehicles (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   vehicle_no VARCHAR(50) NOT NULL UNIQUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Companies table
 CREATE TABLE IF NOT EXISTS companies (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL UNIQUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Allocations table
 CREATE TABLE IF NOT EXISTS allocations (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   vehicle_id INT NOT NULL,
   company_id INT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -68,16 +68,16 @@ CREATE TABLE IF NOT EXISTS allocations (
 
 -- Main spendings table with expense_month field
 CREATE TABLE IF NOT EXISTS spendings (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   vehicle_id INT NOT NULL,
   date DATE NOT NULL, -- actual transaction date
   expense_month DATE NOT NULL, -- belongs-to month (YYYY-MM-01 format)
   category VARCHAR(50) NOT NULL, -- diesel, salary, others
   reason VARCHAR(255),
   amount DECIMAL(12,2) NOT NULL,
-  spended_by ENUM('TSR','MSR','SIB407') DEFAULT NULL,
+  spended_by TEXT DEFAULT NULL,
   mode VARCHAR(20) DEFAULT NULL, -- Payment mode (Cash, UPI, Automatic)
-  marked TINYINT(1) DEFAULT 0,
+  marked BOOLEAN DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE,
   INDEX idx_expense_month (expense_month),
@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS spendings (
 
 -- Payments table
 CREATE TABLE IF NOT EXISTS payments (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   company_id INT NOT NULL,
   vehicle_id INT, -- optional, but if allocated it's set
   date DATE NOT NULL,
@@ -98,27 +98,27 @@ CREATE TABLE IF NOT EXISTS payments (
 
 -- Company summary table
 CREATE TABLE IF NOT EXISTS company_summary (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     description VARCHAR(255),
     credit DECIMAL(10,2) DEFAULT 0.00,
     debit DECIMAL(10,2) DEFAULT 0.00,
-    mode ENUM('Automatic', 'UPI', 'Cash') DEFAULT 'Cash'
+    mode TEXT DEFAULT 'Cash'
 );
 
 -- Vehicle spending table
 CREATE TABLE IF NOT EXISTS vehicle_spending (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     vehicle_no VARCHAR(50),
     date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     description VARCHAR(255),
     amount DECIMAL(10,2),
-    mode ENUM('Automatic', 'UPI', 'Cash') DEFAULT 'Cash'
+    mode TEXT DEFAULT 'Cash'
 );
 
 -- Employee advances table
 CREATE TABLE IF NOT EXISTS employee_advances (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     employee_name VARCHAR(100) NOT NULL,
     date DATE NOT NULL,
     amount DECIMAL(12,2) NOT NULL,
@@ -129,7 +129,7 @@ CREATE TABLE IF NOT EXISTS employee_advances (
 -- Monthly expense summary view (optional but helpful)
 CREATE OR REPLACE VIEW monthly_expense_summary AS
 SELECT 
-    DATE_FORMAT(expense_month, '%Y-%m') as month,
+    TO_CHAR(expense_month, '%Y-%m') as month,
     vehicle_id,
     v.vehicle_no,
     category,
@@ -143,7 +143,7 @@ ORDER BY expense_month DESC, total_amount DESC;
 -- Vehicle monthly total view
 CREATE OR REPLACE VIEW vehicle_monthly_totals AS
 SELECT 
-    DATE_FORMAT(expense_month, '%Y-%m') as month,
+    TO_CHAR(expense_month, '%Y-%m') as month,
     vehicle_id,
     v.vehicle_no,
     SUM(amount) as monthly_total
@@ -155,7 +155,7 @@ ORDER BY expense_month DESC, monthly_total DESC;
 -- Overall monthly totals view
 CREATE OR REPLACE VIEW overall_monthly_totals AS
 SELECT 
-    DATE_FORMAT(expense_month, '%Y-%m') as month,
+    TO_CHAR(expense_month, '%Y-%m') as month,
     SUM(amount) as total_expense,
     COUNT(*) as transaction_count
 FROM spendings
@@ -246,7 +246,7 @@ CREATE TABLE hired_vehicle_transactions (
     id INT PRIMARY KEY AUTO_INCREMENT,
     hired_vehicle_id INT,
     transaction_date DATE NOT NULL,
-    transaction_type ENUM('sale', 'payment') NOT NULL,
+    transaction_type TEXT NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
     description TEXT,
     reference_no VARCHAR(100),
@@ -272,7 +272,7 @@ CREATE TABLE company_payments (
     payment_date DATE NOT NULL,
     company_name VARCHAR(255) NOT NULL,
     received_amount DECIMAL(12,2) NOT NULL,
-    payment_mode ENUM('cash', 'bank_transfer', 'upi', 'cheque') NOT NULL,
+    payment_mode TEXT NOT NULL,
     reference_number VARCHAR(100),
     description TEXT,
     month_year DATE NOT NULL,
