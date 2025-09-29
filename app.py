@@ -348,6 +348,15 @@ def vehicles_page():
         conn.close()
     return render_template('vehicles.html', vehicles=vehicles)
 
+@app.route('/company_audit')
+@login_required
+def company_audit():
+
+    
+    
+    return redirect(url_for('index'))
+    
+
 # Delete Vehicle
 @app.route('/delete_vehicle/<int:id>', methods=['POST'])
 @login_required
