@@ -65,6 +65,17 @@ def get_dict_cursor(conn):
     return conn.cursor(cursor_factory=extras.DictCursor)
 
 
+@app.route('/employee_advances', methods=['GET', 'POST'])
+@login_required
+def employee_advances():
+    # 1. Ensure table exists (create_employee_advances_table())
+    # 2. Get DB connection
+    # 3. Handle POST request (insert new advance)
+    # 4. Handle GET request (fetch and display all advances)
+    # 5. Render the HTML template (e.g., return render_template('employee_advances.html', ...))
+    
+    # Placeholder to stop the 500 error, replace with actual logic:
+    return "Employee Advances Page - Logic not implemented yet."
 # Create tables functions
 # ----------------------------------------------------
 def create_auth_tables():
