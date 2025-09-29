@@ -1,0 +1,863 @@
+<!-- templates/spendings.html -->
+{% extends "layout.html" %}
+{% block content %}
+<h2><i class="fas fa-money-bill-wave"></i> Spendings</h2>
+
+<!-- Flash messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="glass-card form-card">
+    <h3><i class="fas fa-plus-circle"></i> Add New Spending</h3>
+    <form method="POST" id="spendingForm">
+        <div class="form-row">
+            <label for="date"><i class="far fa-calendar-alt"></i> Date:</label>
+            <input type="date" id="date" name="date" required value="{{ today }}">
+        </div>
+
+        <div class="form-row">
+            <label for="expense_month"><i class="fas fa-calendar-month"></i> Expense Month:</label>
+            <input type="month" id="expense_month" name="expense_month" value="{{ current_expense_month }}">
+        </div>
+        
+        <div class="form-row">
+            <label for="vehicle_id"><i class="fas fa-truck"></i> Vehicle:</label>
+            <select id="vehicle_id" name="vehicle_id" required>
+                <option value="">Select Vehicle</option>
+                {% for v in vehicles %}
+                <option value="{{ v.id }}">{{ v.vehicle_no }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-row">
+            <label for="category"><i class="fas fa-tag"></i> Category:</label>
+            <select id="category" name="category" required onchange="toggleCategoryFields()">
+                <option value="">Select Category</option>
+                <option value="diesel">Diesel</option>
+                <option value="salary">Driver Salary</option>
+                <option value="others">Others</option>
+            </select>
+        </div>
+        
+        <!-- Diesel Fields -->
+        <div id="dieselFields" class="category-section hidden">
+            <div class="form-row">
+                <label for="diesel_payment_status"><i class="fas fa-money-check"></i> Payment Status:</label>
+                <select id="diesel_payment_status" name="diesel_payment_status" onchange="toggleDieselFields()">
+                    <option value="Paid">Paid</option>
+                    <option value="Unpaid">Unpaid</option>
+                </select>
+            </div>
+            
+            <!-- Paid Diesel Fields -->
+            <div id="paidDieselFields" class="hidden">
+                <div class="form-row">
+                    <label for="diesel_amount"><i class="fas fa-rupee-sign"></i> Amount (₹):</label>
+                    <input type="number" id="diesel_amount" name="diesel_amount" step="0.01" placeholder="Enter amount">
+                </div>
+                
+                <div class="form-row">
+                    <label for="diesel_spended_by"><i class="fas fa-user"></i> Spent by:</label>
+                    <select id="diesel_spended_by" name="diesel_spended_by">
+                        <option value="MSR" selected>MSR</option>
+                        <option value="TSR">TSR</option>
+                        <option value="SIB407">SIB407</option>
+                    </select>
+                </div>
+                
+                <div class="form-row">
+                    <label for="diesel_mode"><i class="fas fa-credit-card"></i> Payment Mode:</label>
+                    <select id="diesel_mode" name="diesel_mode">
+                        <option value="UPI" selected>UPI</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Automatic">Automatic</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Unpaid Diesel Fields -->
+            <div id="unpaidDieselFields" class="hidden">
+                <div class="form-row">
+                    <label for="unpaid_diesel_amount"><i class="fas fa-rupee-sign"></i> Amount (₹):</label>
+                    <input type="number" id="unpaid_diesel_amount" name="unpaid_diesel_amount" step="0.01" placeholder="Enter amount">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Salary Fields -->
+        <div id="salaryFields" class="category-section hidden">
+            <div class="form-row">
+                <label for="salary_amount"><i class="fas fa-rupee-sign"></i> Amount (₹):</label>
+                <input type="number" id="salary_amount" name="salary_amount" step="0.01" placeholder="Enter amount">
+            </div>
+            
+            <div class="form-row">
+                <label for="salary_spended_by"><i class="fas fa-user"></i> Spent by:</label>
+                <select id="salary_spended_by" name="salary_spended_by">
+                    <option value="MSR" selected>MSR</option>
+                    <option value="TSR">TSR</option>
+                    <option value="SIB407">SIB407</option>
+                </select>
+            </div>
+            
+            <div class="form-row">
+                <label for="salary_mode"><i class="fas fa-credit-card"></i> Payment Mode:</label>
+                <select id="salary_mode" name="salary_mode">
+                    <option value="UPI" selected>UPI</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Automatic">Automatic</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- Others Fields -->
+        <div id="othersFields" class="category-section hidden">
+            <div class="form-row">
+                <label for="reason"><i class="fas fa-sticky-note"></i> Reason:</label>
+                <input type="text" id="reason" name="reason" placeholder="e.g., Maintenance, Repair, etc.">
+            </div>
+            
+            <div class="form-row">
+                <label for="others_amount"><i class="fas fa-rupee-sign"></i> Amount (₹):</label>
+                <input type="number" id="others_amount" name="others_amount" step="0.01" placeholder="Enter amount">
+            </div>
+            
+            <div class="form-row">
+                <label for="others_spended_by"><i class="fas fa-user"></i> Spent by:</label>
+                <select id="others_spended_by" name="others_spended_by">
+                    <option value="MSR" selected>MSR</option>
+                    <option value="TSR">TSR</option>
+                    <option value="SIB407">SIB407</option>
+                </select>
+            </div>
+            
+            <div class="form-row">
+                <label for="others_mode"><i class="fas fa-credit-card"></i> Payment Mode:</label>
+                <select id="others_mode" name="others_mode">
+                    <option value="UPI" selected>UPI</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Automatic">Automatic</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <button type="submit" class="submit-btn"><i class="fas fa-plus"></i> Add Spending</button>
+        </div>
+    </form>
+</div>
+
+<div class="action-bar">
+    <button class="btn-export" onclick="exportTableToCSV('paidTab', 'paid_payments.csv')">
+        <i class="fas fa-file-export"></i> Export Paid Payments
+    </button>
+    <button class="btn-export" onclick="exportTableToCSV('unpaidTab', 'unpaid_payments.csv')">
+        <i class="fas fa-file-export"></i> Export Unpaid Payments
+    </button>
+    <button class="btn-export" onclick="window.location.href='/export/monthly_expenses'">
+        <i class="fas fa-file-export"></i> Export Monthly Expenses
+    </button>
+</div>
+
+<!-- Search Box -->
+<div class="search-container">
+    <i class="fas fa-search search-icon"></i>
+    <input type="text" id="searchInput" class="search-box" placeholder="Search payments by vehicle, category, reason..." onkeyup="filterPayments()">
+</div>
+
+<div class="tabs">
+    <div class="tab active" onclick="switchTab('paidTab')">
+        <i class="fas fa-check-circle"></i> Paid Payments (₹{{ total_spent }})
+    </div>
+    <div class="tab" onclick="switchTab('unpaidTab')">
+        <i class="fas fa-clock"></i> Unpaid Payments (₹{{ total_unpaid }})
+    </div>
+    <div class="tab" onclick="switchTab('settledTab')">
+        <i class="fas fa-history"></i> Settled History
+    </div>
+</div>
+
+<!-- Settled Payments Tab -->
+<div id="settledTab" class="tab-content">
+    <h3><i class="fas fa-history"></i> Settled Payments</h3>
+    <div class="glass-card">
+        {% if settled_rows %}
+        <div style="overflow-x: auto;">
+            <table class="spend-table" id="settledTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Vehicle</th>
+                        <th>Category</th>
+                        <th>Reason</th>
+                        <th>Amount</th>
+                        <th>By</th>
+                        <th>Mode</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in settled_rows %}
+                    <tr>
+                        <td>{{ r.date }}</td>
+                        <td>{{ r.vehicle_no }}</td>
+                        <td>{{ r.category }}</td>
+                        <td>{{ r.reason }}</td>
+                        <td>₹{{ "%.2f"|format(r.amount) }}</td>
+                        <td>{{ r.spended_by }}</td>
+                        <td>{{ r.mode }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="text-align: center; padding: 20px; color: var(--muted);">No settled payments yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Paid Payments Tab -->
+<div id="paidTab" class="tab-content active">
+    <h3><i class="fas fa-check-circle"></i> Paid Payments</h3>
+    <div class="glass-card">
+        {% if paid_rows %}
+        <div style="overflow-x: auto;">
+            <table class="spend-table" id="paidTable">
+                <thead>
+                    <tr>
+                        <th>Mark</th>
+                        <th>Date</th>
+                        <th>Vehicle</th>
+                        <th>Category</th>
+                        <th>Reason</th>
+                        <th>Amount</th>
+                        <th>By</th>
+                        <th>Mode</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in paid_rows %}
+                    <tr data-id="{{ r.id }}" class="{{ 'marked' if r.marked else '' }}">
+                        <td><input type="checkbox" class="mark-checkbox" {% if r.marked %}checked{% endif %} onchange="toggleMark({{r.id}})"></td>
+                        <td>{{ r.date }}</td>
+                        <td>{{ r.vehicle_no }}</td>
+                        <td>{{ r.category }}</td>
+                        <td>{{ r.reason }}</td>
+                        <td>₹{{ "%.2f"|format(r.amount) }}</td>
+                        <td>{{ r.spended_by }}</td>
+                        <td>{{ r.mode }}</td>
+                        <td>
+                            <button class="btn-edit" onclick="openEditModal({{ r.id }})">
+    <i class="fas fa-edit"></i> Edit
+</button>
+                            <button class="btn-delete" data-id="{{ r.id }}">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="text-align: center; padding: 20px; color: var(--muted);">No paid payments recorded yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Unpaid Payments Tab -->
+<div id="unpaidTab" class="tab-content">
+    <h3><i class="fas fa-clock"></i> Unpaid Payments 
+        <button id="makeSettlementBtn" class="btn-mark-paid" style="margin-left: 10px;">
+            <i class="fas fa-money-check"></i> Make Settlement
+        </button>
+    </h3>
+    <div class="glass-card">
+        {% if unpaid_rows %}
+        <div style="overflow-x: auto;">
+            <table class="spend-table" id="unpaidTable">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAllUnpaid"></th>
+                        <th>Date</th>
+                        <th>Vehicle</th>
+                        <th>Category</th>
+                        <th>Reason</th>
+                        <th>Amount</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in unpaid_rows %}
+                    <tr data-id="{{ r.id }}">
+                        <td><input type="checkbox" class="unpaid-checkbox" data-id="{{ r.id }}" data-amount="{{ r.amount }}"></td>
+                        <td>{{ r.date }}</td>
+                        <td>{{ r.vehicle_no }}</td>
+                        <td>{{ r.category }}</td>
+                        <td>{{ r.reason }}</td>
+                        <td>₹{{ "%.2f"|format(r.amount) }}</td>
+                        <td>
+                            <button class="btn-edit" onclick="openEditModal({{ r.id }}, '{{ r.date }}', {{ r.vehicle_id }}, '{{ r.category }}', '{{ r.reason }}', {{ r.amount }}, '{{ r.spended_by }}', '{{ r.mode }}', '{{ r.expense_month.strftime('%Y-%m') if r.expense_month else '' }}')">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button class="btn-delete" data-id="{{ r.id }}">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                            <button class="btn-mark-paid" data-id="{{ r.id }}" onclick="markAsPaid({{r.id}})">
+                                <i class="fas fa-check"></i> Mark as Paid
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="text-align: center; padding: 20px; color: var(--muted);">No unpaid payments recorded yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Edit Spending Modal -->
+<!-- Edit Spending Modal -->
+<div id="editModal" class="modal" style="display: none;">
+    <div class="modal-content glass-card" style="max-width: 600px;">
+        <span class="close" onclick="closeEditModal()">&times;</span>
+        <h3><i class="fas fa-edit"></i> Edit Spending</h3>
+        <form id="editForm" method="POST">
+            <input type="hidden" name="spending_id" id="edit_spending_id">
+            
+            <div class="form-row">
+                <label for="edit_date"><i class="far fa-calendar-alt"></i> Date:</label>
+                <input type="date" id="edit_date" name="date" required>
+            </div>
+
+            <div class="form-row">
+                <label for="edit_expense_month"><i class="fas fa-calendar-month"></i> Expense Month:</label>
+                <input type="month" id="edit_expense_month" name="expense_month" required>
+            </div>
+            
+            <div class="form-row">
+                <label for="edit_vehicle_id"><i class="fas fa-truck"></i> Vehicle:</label>
+                <select id="edit_vehicle_id" name="vehicle_id" required>
+                    <option value="">Select Vehicle</option>
+                    {% for v in vehicles %}
+                    <option value="{{ v.id }}">{{ v.vehicle_no }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-row">
+                <label for="edit_category"><i class="fas fa-tag"></i> Category:</label>
+                <select id="edit_category" name="category" required>
+                    <option value="">Select Category</option>
+                    <option value="diesel">Diesel</option>
+                    <option value="salary">Driver Salary</option>
+                    <option value="others">Others</option>
+                </select>
+            </div>
+            
+            <div class="form-row">
+                <label for="edit_reason"><i class="fas fa-sticky-note"></i> Reason:</label>
+                <input type="text" id="edit_reason" name="reason" placeholder="e.g., Maintenance, Repair, etc.">
+            </div>
+            
+            <div class="form-row">
+                <label for="edit_amount"><i class="fas fa-rupee-sign"></i> Amount (₹):</label>
+                <input type="number" id="edit_amount" name="amount" step="0.01" required>
+            </div>
+            
+            <div class="form-row">
+                <label for="edit_spended_by"><i class="fas fa-user"></i> Spent by:</label>
+                <select id="edit_spended_by" name="spended_by">
+                    <option value="">-- Select -- (Leave blank for unpaid)</option>
+                    <option value="MSR">MSR</option>
+                    <option value="TSR">TSR</option>
+                    <option value="SIB407">SIB407</option>
+                </select>
+            </div>
+            
+            <div class="form-row">
+                <label for="edit_mode"><i class="fas fa-credit-card"></i> Payment Mode:</label>
+                <select id="edit_mode" name="mode">
+                    <option value="">-- Select -- (Leave blank for unpaid)</option>
+                    <option value="UPI">UPI</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Automatic">Automatic</option>
+                </select>
+            </div>
+            
+            <div class="form-row">
+                <button type="submit" class="submit-btn"><i class="fas fa-save"></i> Update Spending</button>
+                <button type="button" class="btn-delete" onclick="closeEditModal()" style="margin-left: 10px;">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Settlement Modal -->
+<div id="settlementModal" class="modal" style="display: none;">
+    <div class="modal-content glass-card">
+        <span class="close" onclick="closeSettlementModal()">&times;</span>
+        <h3><i class="fas fa-money-check"></i> Make Settlement</h3>
+        <div id="settlementSummary">
+            <p>Selected <span id="selectedCount">0</span> payments totaling ₹<span id="selectedTotal">0.00</span></p>
+        </div>
+        <form id="settlementForm">
+            <div class="form-row">
+                <label for="settlement_spended_by"><i class="fas fa-user"></i> Paid By:</label>
+                <select id="settlement_spended_by" name="spended_by" required>
+                    <option value="MSR" selected>MSR</option>
+                    <option value="TSR">TSR</option>
+                    <option value="SIB407">SIB407</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label for="settlement_mode"><i class="fas fa-credit-card"></i> Payment Mode:</label>
+                <select id="settlement_mode" name="mode" required>
+                    <option value="UPI" selected>UPI</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Automatic">Automatic</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <button type="submit" class="submit-btn"><i class="fas fa-check"></i> Process Settlement</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.action-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.category-section {
+    border-left: 3px solid var(--primary);
+    padding-left: 15px;
+    margin-bottom: 15px;
+}
+
+.hidden {
+    display: none;
+}
+
+.marked {
+    background-color: rgba(16, 185, 129, 0.2) !important;
+}
+
+#settlementSummary {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+</style>
+
+<script>
+// Tab switching
+// Tab switching
+function switchTab(tabId) {
+    // Hide all tab contents
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Show selected tab content
+    document.getElementById(tabId).classList.add('active');
+    
+    // Update tab active state
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Find the tab that was clicked and activate it
+    document.querySelectorAll('.tab').forEach(tab => {
+        if (tab.textContent.includes(document.getElementById(tabId).querySelector('h3').textContent)) {
+            tab.classList.add('active');
+        }
+    });
+}
+
+// Toggle category fields based on selection
+function toggleCategoryFields() {
+    const category = document.getElementById('category').value;
+    
+    // Hide all category sections
+    document.querySelectorAll('.category-section').forEach(section => {
+        section.classList.add('hidden');
+    });
+    
+    // Show the selected category section
+    if (category === 'diesel') {
+        document.getElementById('dieselFields').classList.remove('hidden');
+        toggleDieselFields(); // Also toggle diesel sub-fields
+    } else if (category === 'salary') {
+        document.getElementById('salaryFields').classList.remove('hidden');
+    } else if (category === 'others') {
+        document.getElementById('othersFields').classList.remove('hidden');
+    }
+}
+
+// Toggle diesel fields based on payment status
+function toggleDieselFields() {
+    const paymentStatus = document.getElementById('diesel_payment_status').value;
+    
+    // Hide both paid and unpaid fields
+    document.getElementById('paidDieselFields').classList.add('hidden');
+    document.getElementById('unpaidDieselFields').classList.add('hidden');
+    
+    // Show the appropriate fields
+    if (paymentStatus === 'Paid') {
+        document.getElementById('paidDieselFields').classlassList.remove('hidden');
+    } else {
+        document.getElementById('unpaidDieselFields').classList.remove('hidden');
+    }
+}
+
+// Edit spending modal - Load data
+function openEditModal(id) {
+    console.log('Opening edit modal for ID:', id); // Debug log
+    
+    // First, fetch the latest data from the server to ensure we have the most current values
+    fetch('/get_spending/' + id)
+        .then(response => response.json())
+        .then(data => {
+            console.log('Received data:', data); // Debug log
+            if (data.success) {
+                const spending = data.spending;
+                
+                // Populate the form with the fetched data
+                document.getElementById('edit_spending_id').value = spending.id;
+                document.getElementById('edit_date').value = spending.date;
+                document.getElementById('edit_expense_month').value = spending.expense_month;
+                document.getElementById('edit_vehicle_id').value = spending.vehicle_id;
+                document.getElementById('edit_category').value = spending.category;
+                document.getElementById('edit_reason').value = spending.reason || '';
+                document.getElementById('edit_amount').value = spending.amount;
+                document.getElementById('edit_spended_by').value = spending.spended_by || '';
+                document.getElementById('edit_mode').value = spending.mode || '';
+                
+                // Show the modal
+                document.getElementById('editModal').style.display = 'flex';
+            } else {
+                alert('Error loading spending data: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while loading the spending data.');
+        });
+}
+
+function closeEditModal() {
+    document.getElementById('editModal').style.display = 'none';
+    // Reset the form
+    document.getElementById('editForm').reset();
+}
+
+// Search functionality
+function filterPayments() {
+    const searchText = document.getElementById('searchInput').value.toLowerCase();
+    const activeTab = document.querySelector('.tab-content.active').id;
+    const table = document.getElementById(activeTab === 'paidTab' ? 'paidTable' : 
+                                          activeTab === 'unpaidTab' ? 'unpaidTable' : 
+                                          activeTab === 'settledTab' ? 'settledTable' : null);
+    
+    if (!table) return;
+    
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const cells = row.getElementsByTagName('td');
+        let found = false;
+        
+        for (let j = 0; j < cells.length; j++) {
+            const cellText = cells[j].textContent || cells[j].innerText;
+            if (cellText.toLowerCase().indexOf(searchText) > -1) {
+                found = true;
+                break;
+            }
+        }
+        
+        row.style.display = found ? '' : 'none';
+    }
+}
+
+// Settlement functionality
+document.getElementById('makeSettlementBtn')?.addEventListener('click', function() {
+    const selectedCheckboxes = document.querySelectorAll('.unpaid-checkbox:checked');
+    
+    if (selectedCheckboxes.length === 0) {
+        alert('Please select at least one payment to settle.');
+        return;
+    }
+    
+    let total = 0;
+    selectedCheckboxes.forEach(checkbox => {
+        total += parseFloat(checkbox.getAttribute('data-amount'));
+    });
+    
+    document.getElementById('selectedCount').textContent = selectedCheckboxes.length;
+    document.getElementById('selectedTotal').textContent = total.toFixed(2);
+    document.getElementById('settlementModal').style.display = 'flex';
+});
+
+function closeSettlementModal() {
+    document.getElementById('settlementModal').style.display = 'none';
+}
+
+document.getElementById('settlementForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const selectedIds = Array.from(document.querySelectorAll('.unpaid-checkbox:checked'))
+        .map(checkbox => checkbox.getAttribute('data-id'));
+    
+    const spendedBy = document.getElementById('settlement_spended_by').value;
+    const mode = document.getElementById('settlement_mode').value;
+    
+    fetch('/process_settlement', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            spending_ids: selectedIds,
+            spended_by: spendedBy,
+            mode: mode
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message || 'Payments settled successfully!');
+            closeSettlementModal();
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || data.message));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while processing the settlement.');
+    });
+});
+
+// Select all functionality for unpaid payments
+document.getElementById('selectAllUnpaid')?.addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.unpaid-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = this.checked;
+    });
+    
+    // Update settlement summary
+    updateSettlementSummary();
+});
+
+// Update settlement summary when checkboxes change
+document.querySelectorAll('.unpaid-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', updateSettlementSummary);
+});
+
+function updateSettlementSummary() {
+    const selectedCheckboxes = document.querySelectorAll('.unpaid-checkbox:checked');
+    let total = 0;
+    
+    selectedCheckboxes.forEach(checkbox => {
+        total += parseFloat(checkbox.getAttribute('data-amount'));
+    });
+    
+    document.getElementById('selectedCount').textContent = selectedCheckboxes.length;
+    document.getElementById('selectedTotal').textContent = total.toFixed(2);
+}
+
+// Delete spending
+document.querySelectorAll('.btn-delete').forEach(button => {
+    button.addEventListener('click', function() {
+        const id = this.getAttribute('data-id');
+        if (confirm('Are you sure you want to delete this spending record?')) {
+            fetch('/delete_spending/' + id, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while deleting the record.');
+            });
+        }
+    });
+});
+
+// Mark as paid for individual unpaid payment
+function markAsPaid(id) {
+    if (confirm('Mark this payment as paid?')) {
+        fetch('/mark_paid/' + id, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                spended_by: 'MSR',
+                mode: 'UPI'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || data.message));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while marking the payment as paid.');
+        });
+    }
+}
+
+// Toggle mark for paid payments
+function toggleMark(id) {
+    fetch('/toggle_mark', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: id })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            alert('Error: ' + data.error);
+            location.reload(); // Reload to sync UI state
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while toggling the mark.');
+        location.reload(); // Reload to sync UI state
+    });
+}
+
+// Handle edit form submission
+document.getElementById('editForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const spendingId = document.getElementById('edit_spending_id').value;
+    const formData = new FormData(this);
+    
+    fetch('/update_spending/' + spendingId, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Spending updated successfully!');
+            closeEditModal();
+            location.reload(); // Reload to show updated data
+        } else {
+            alert('Error updating spending: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while updating the spending.');
+    });
+});
+
+// Export to CSV function
+function exportTableToCSV(tabId, filename) {
+    let table;
+    if (tabId === 'paidTab') {
+        table = document.getElementById('paidTable');
+    } else if (tabId === 'unpaidTab') {
+        table = document.getElementById('unpaidTable');
+    } else {
+        alert('No data to export');
+        return;
+    }
+    
+    let csv = [];
+    const rows = table.querySelectorAll('tr');
+    
+    for (let i = 0; i < rows.length; i++) {
+        let row = [], cols = rows[i].querySelectorAll('td, th');
+        
+        for (let j = 0; j < cols.length; j++) {
+            // Skip action columns and checkbox columns
+            if (j === 0 || j === cols.length - 1) continue;
+            
+            // Clean inner text and add to row
+            row.push('"' + (cols[j].innerText.replace(/"/g, '""')) + '"');
+        }
+        
+        csv.push(row.join(','));
+    }
+    
+    // Download CSV file
+    downloadCSV(csv.join('\n'), filename);
+}
+
+function downloadCSV(csv, filename) {
+    const csvFile = new Blob([csv], {type: 'text/csv'});
+    const downloadLink = document.createElement('a');
+    
+    // Create download link
+    downloadLink.download = filename;
+    downloadLink.href = window.URL.createObjectURL(csvFile);
+    downloadLink.style.display = 'none';
+    
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+}
+
+// Initialize category fields on page load
+document.addEventListener('DOMContentLoaded', function() {
+    toggleCategoryFields();
+    
+    // Close modals when clicking outside
+    window.addEventListener('click', function(event) {
+        const editModal = document.getElementById('editModal');
+        const settlementModal = document.getElementById('settlementModal');
+        
+        if (event.target === editModal) {
+            closeEditModal();
+        }
+        if (event.target === settlementModal) {
+            closeSettlementModal();
+        }
+    });
+    
+    // Add event listener for modal close buttons
+    document.querySelectorAll('.modal .close').forEach(closeBtn => {
+        closeBtn.addEventListener('click', function() {
+            this.closest('.modal').style.display = 'none';
+        });
+    });
+    
+    console.log('Spendings page loaded successfully'); // Debug log
+});
+</script>
+{% endblock %}

@@ -1,0 +1,74 @@
+<!-- templates/incoming.html -->
+{% extends "layout.html" %}
+{% block content %}
+<h2>Incoming Payments & Companies</h2>
+
+<div class="glass-card form-card">
+  <form method="POST">
+    <input type="hidden" name="action" value="add_company">
+    <label>Register New Company:</label>
+    <input type="text" name="company_name" required placeholder="Company Name">
+    <button type="submit">Add Company</button>
+  </form>
+</div>
+
+<div class="glass-card form-card">
+  <form method="POST">
+    <input type="hidden" name="action" value="add_payment">
+    <label>Company:</label>
+    <select name="company_id" required>
+      {% for c in companies %}
+      <option value="{{ c.id }}">{{ c.name }}</option>
+      {% endfor %}
+    </select>
+    <label>Vehicle (optional):</label>
+    <select name="vehicle_id">
+      <option value="">-- None --</option>
+      {% for v in vehicles %}
+      <option value="{{ v.id }}">{{ v.vehicle_no }}</option>
+      {% endfor %}
+    </select>
+    <label>Date:</label>
+    <input type="date" name="date" required value="">
+    <label>Amount (₹):</label>
+    <input type="number" name="amount" step="0.01" required>
+    <button type="submit">Add Payment</button>
+  </form>
+</div>
+
+<div class="glass-card">
+  <h3>Overall Summary</h3>
+  <div>Credited: ₹{{ credited }}</div>
+  <div>Debited: ₹{{ debited }}</div>
+  <div>Balance: ₹{{ balance }}</div>
+</div>
+
+<div class="glass-card">
+  <h3>TSR Summary</h3>
+  <div>TSR Spent: ₹{{ tsr_spent }}</div>
+  <div>TSR Balance: ₹{{ tsr_balance }}</div>
+</div>
+
+<div class="glass-card">
+  <h3>MSR Summary</h3>
+  <div>MSR Spent: ₹{{ msr_spent }}</div>
+  <div>MSR Balance: ₹{{ msr_balance }}</div>
+</div>
+
+<div class="glass-card">
+  <h3>Payments</h3>
+  <table class="spend-table">
+    <thead><tr><th>Date</th><th>Company</th><th>Vehicle</th><th>Amount</th></tr></thead>
+    <tbody>
+      {% for p in payments %}
+      <tr>
+        <td>{{ p.date }}</td>
+        <td>{{ p.company_name }}</td>
+        <td>{{ p.vehicle_no or '-'}}</td>
+        <td>₹{{ "%.2f"|format(p.amount) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

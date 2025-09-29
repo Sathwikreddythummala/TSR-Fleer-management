@@ -1,0 +1,60 @@
+<!-- templates/monthly_report.html -->
+{% extends "layout.html" %}
+{% block content %}
+<h2>Monthly Expense Report</h2>
+
+<div class="glass-card form-card">
+    <h3>Select Month</h3>
+    <form method="GET">
+        <label for="month">Month:</label>
+        <select id="month" name="month" onchange="this.form.submit()">
+            {% for month in available_months %}
+            <option value="{{ month }}" {% if month == selected_month %}selected{% endif %}>{{ month }}</option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+<div class="glass-card">
+    <h3>Expenses for {{ selected_month }} - Total: ₹{{ "%.2f"|format(total) }}</h3>
+    
+    {% if spendings %}
+    <div style="overflow-x: auto;">
+        <table class="spend-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Vehicle</th>
+                    <th>Category</th>
+                    <th>Reason</th>
+                    <th>Amount</th>
+                    <th>Paid By</th>
+                    <th>Payment Mode</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for spending in spendings %}
+                <tr>
+                    <td>{{ spending.date }}</td>
+                    <td>{{ spending.vehicle_no }}</td>
+                    <td>{{ spending.category }}</td>
+                    <td>{{ spending.reason or '-' }}</td>
+                    <td>₹{{ "%.2f"|format(spending.amount) }}</td>
+                    <td>{{ spending.spended_by or 'Unpaid' }}</td>
+                    <td>{{ spending.mode or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="text-align: center; padding: 20px; color: var(--muted);">No expenses found for {{ selected_month }}.</p>
+    {% endif %}
+</div>
+
+<div style="margin-top: 20px;">
+    <button class="btn-export" onclick="window.location.href='/export/monthly_expenses?month={{ selected_month }}'">
+        Export {{ selected_month }} Expenses
+    </button>
+</div>
+{% endblock %}

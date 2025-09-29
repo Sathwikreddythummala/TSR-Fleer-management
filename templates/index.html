@@ -1,0 +1,101 @@
+<!-- templates/index.html -->
+{% extends "layout.html" %}
+{% block content %}
+<h2>Dashboard</h2>
+
+<div class="dashboard-row">
+  <div class="card glass-card">
+    <h3>Vehicles</h3>
+    <p>{{ totals.vehicles }}</p>
+  </div>
+  <div class="card glass-card">
+    <h3>Credited</h3>
+    <p>₹{{ "%.2f"|format(totals.credited) }}</p>
+  </div>
+  <div class="card glass-card">
+    <h3>Debited</h3>
+    <p>₹{{ "%.2f"|format(totals.debited) }}</p>
+  </div>
+  <div class="card glass-card">
+    <h3>Balance</h3>
+    <p>₹{{ "%.2f"|format(totals.balance) }}</p>
+  </div>
+  <div class="card glass-card">
+    <h3>This Month</h3>
+    <p>₹{{ "%.2f"|format(totals.current_month) }}</p>
+  </div>
+  <div class="card glass-card">
+    <h3>Last Month</h3>
+    <p>₹{{ "%.2f"|format(totals.prev_month) }}</p>
+  </div>
+</div>
+
+<h3>Current Month Expenses by Vehicle</h3>
+<div class="glass-card">
+  {% if monthly_vehicle_expenses and monthly_vehicle_expenses|length > 0 %}
+  <table class="spend-table">
+    <thead>
+      <tr>
+        <th>Vehicle</th>
+        <th>Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for expense in monthly_vehicle_expenses %}
+      <tr>
+        <td>{{ expense.vehicle_no }}</td>
+        <td>₹{{ "%.2f"|format(expense.monthly_total) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="text-align: center; padding: 20px; color: var(--muted);">No expenses recorded for this month yet.</p>
+  {% endif %}
+</div>
+
+<h3>Monthly Expense Trend (Last 6 Months)</h3>
+<div class="glass-card">
+  {% if monthly_trend and monthly_trend|length > 0 %}
+  <table class="spend-table">
+    <thead>
+      <tr>
+        <th>Month</th>
+        <th>Total Expense</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for trend in monthly_trend %}
+      <tr>
+        <td>{{ trend.month }}</td>  <!-- REMOVED .strftime('%Y-%m') -->
+        <td>₹{{ "%.2f"|format(trend.total_expense) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="text-align: center; padding: 20px; color: var(--muted);">No expense data available.</p>
+  {% endif %}
+</div>
+
+<h3>Vehicles Summary</h3>
+<div class="vehicle-grid">
+  {% if vehicles and vehicles|length > 0 %}
+    {% for v in vehicles %}
+    <div class="vehicle-card glass-card">
+      <div class="vehicle-no">{{ v.vehicle_no }}</div>
+      <div class="total">Total Spent: ₹{{ "%.2f"|format(v.total_spent or 0) }}</div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="glass-card">
+      <p style="text-align: center; padding: 20px; color: var(--muted);">No vehicles registered yet.</p>
+    </div>
+  {% endif %}
+</div>
+
+<div style="margin-top: 20px;">
+  <a href="{{ url_for('monthly_report') }}" class="btn-export">View Detailed Monthly Report</a>
+  <a href="{{ url_for('export_data', data_type='monthly_expenses') }}" class="btn-export">Export Monthly Expenses</a>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+<!-- templates/vehicles.html -->
+{% extends "layout.html" %}
+{% block content %}
+<h2>Vehicle Management</h2>
+
+<div class="glass-card form-card">
+  <form method="POST">
+    <label>Register Vehicle No:</label>
+    <input type="text" name="vehicle_no" required placeholder="e.g., 3393">
+    <button type="submit">Add Vehicle</button>
+  </form>
+</div>
+
+<h3>Registered Vehicles</h3>
+<div id="vehicleButtons" class="vehicle-buttons">
+  {% for v in vehicles %}
+  <button class="veh-btn" data-id="{{ v.id }}">{{ v.vehicle_no }}</button>
+  {% endfor %}
+</div>
+
+<div id="vehicleSpendingArea" class="glass-card">
+  <h4>Select a vehicle and month to view spendings</h4>
+  <div>
+    <label>Month (YYYY-MM):</label>
+    <input type="month" id="vehicleMonth">
+    <button id="loadVehicleSpend">Load</button>
+  </div>
+  <div id="vehicleSpendingsList"></div>
+</div>
+{% endblock %}

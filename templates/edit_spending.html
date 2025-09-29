@@ -1,0 +1,70 @@
+<!-- templates/edit_spending.html -->
+{% extends "layout.html" %}
+{% block content %}
+<h2>Edit Spending</h2>
+
+<div class="glass-card form-card">
+    <h3>Edit Spending Details</h3>
+    <form method="POST">
+        <div class="form-row">
+            <label for="date">Date:</label>
+            <input type="date" id="date" name="date" required value="{{ spending.date }}">
+        </div>
+        
+        <div class="form-row">
+            <label for="vehicle_id">Vehicle:</label>
+            <select id="vehicle_id" name="vehicle_id" required>
+                <option value="">Select Vehicle</option>
+                {% for v in vehicles %}
+                <option value="{{ v.id }}" {% if v.id == spending.vehicle_id %}selected{% endif %}>{{ v.vehicle_no }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-row">
+            <label for="category">Category:</label>
+            <select id="category" name="category" required>
+                <option value="">Select Category</option>
+                <option value="diesel" {% if spending.category == 'diesel' %}selected{% endif %}>Diesel</option>
+                <option value="salary" {% if spending.category == 'salary' %}selected{% endif %}>Driver Salary</option>
+                <option value="others" {% if spending.category == 'others' %}selected{% endif %}>Others</option>
+            </select>
+        </div>
+        
+        <div class="form-row">
+            <label for="reason">Reason:</label>
+            <input type="text" id="reason" name="reason" value="{{ spending.reason or '' }}">
+        </div>
+        
+        <div class="form-row">
+            <label for="amount">Amount (₹):</label>
+            <input type="number" id="amount" name="amount" step="0.01" required value="{{ spending.amount }}">
+        </div>
+        
+        <div class="form-row">
+            <label for="spended_by">Spent by:</label>
+            <select id="spended_by" name="spended_by">
+                <option value="">-- Select --</option>
+                <option value="MSR" {% if spending.spended_by == 'MSR' %}selected{% endif %}>MSR</option>
+                <option value="TSR" {% if spending.spended_by == 'TSR' %}selected{% endif %}>TSR</option>
+                <option value="SIB407" {% if spending.spended_by == 'SIB407' %}selected{% endif %}>SIB407</option>
+            </select>
+        </div>
+        
+        <div class="form-row">
+            <label for="mode">Payment Mode:</label>
+            <select id="mode" name="mode">
+                <option value="">-- Select --</option>
+                <option value="UPI" {% if spending.mode == 'UPI' %}selected{% endif %}>UPI</option>
+                <option value="Cash" {% if spending.mode == 'Cash' %}selected{% endif %}>Cash</option>
+                <option value="Automatic" {% if spending.mode == 'Automatic' %}selected{% endif %}>Automatic</option>
+            </select>
+        </div>
+        
+        <div class="form-row">
+            <button type="submit" class="submit-btn">Update Spending</button>
+            <a href="{{ url_for('spendings') }}" class="btn-edit" style="margin-left: 10px;">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

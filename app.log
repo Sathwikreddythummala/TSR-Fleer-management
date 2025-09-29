@@ -1,0 +1,466 @@
+Found 29 paid spendings
+Found 14 unpaid spendings
+Total spent: 450248.00
+Total unpaid: 191312.00
+Found 30 paid spendings
+Found 13 unpaid spendings
+Total spent: 462742.00
+Total unpaid: 178818.00
+Found 29 paid spendings
+Found 13 unpaid spendings
+Total spent: 450248.00
+Total unpaid: 178818.00
+Found 30 paid spendings
+Found 12 unpaid spendings
+Total spent: 455381.00
+Total unpaid: 173685.00
+Found 29 paid spendings
+Found 12 unpaid spendings
+Total spent: 450248.00
+Total unpaid: 173685.00
+Found 29 paid spendings
+Found 12 unpaid spendings
+Total spent: 450248.00
+Total unpaid: 173685.00
+Found 29 paid spendings
+Found 12 unpaid spendings
+Total spent: 450248.00
+Total unpaid: 173685.00
+Found 29 paid spendings
+Found 12 unpaid spendings
+Total spent: 450248.00
+Total unpaid: 173685.00
+Found 29 paid spendings
+Found 12 unpaid spendings
+Total spent: 450248.00
+Total unpaid: 173685.00
+Found 29 paid spendings
+Found 12 unpaid spendings
+Total spent: 450248.00
+Total unpaid: 173685.00
+Found 29 paid spendings
+Found 12 unpaid spendings
+Total spent: 450248.00
+Total unpaid: 173685.00
+=== FORM DATA ===
+date: 2025-08-23
+vehicle_id: 2
+category: diesel
+diesel_payment_status: Unpaid
+diesel_amount: 
+diesel_spended_by: MSR
+diesel_mode: UPI
+unpaid_diesel_amount: 5133
+salary_amount: 
+salary_spended_by: MSR
+salary_mode: UPI
+reason: 
+others_amount: 
+others_spended_by: MSR
+others_mode: UPI
+amount: 5133
+spended_by: 
+mode: 
+Inserting unpaid spending (NULL spended_by and mode)
+Found 29 paid spendings
+Found 13 unpaid spendings
+Total spent: 450248.00
+Total unpaid: 178818.00
+=== FORM DATA ===
+date: 2025-08-23
+vehicle_id: 5
+category: diesel
+diesel_payment_status: Unpaid
+diesel_amount: 
+diesel_spended_by: MSR
+diesel_mode: UPI
+unpaid_diesel_amount: 12494
+salary_amount: 
+salary_spended_by: MSR
+salary_mode: UPI
+reason: 
+others_amount: 
+others_spended_by: MSR
+others_mode: UPI
+amount: 12494
+spended_by: 
+mode: 
+Inserting unpaid spending (NULL spended_by and mode)
+Found 29 paid spendings
+Found 14 unpaid spendings
+Total spent: 450248.00
+Total unpaid: 191312.00
+=== FORM DATA ===
+date: 2025-08-30
+vehicle_id: 5
+category: diesel
+diesel_payment_status: Unpaid
+diesel_amount: 
+diesel_spended_by: MSR
+diesel_mode: UPI
+unpaid_diesel_amount: 11432
+salary_amount: 
+salary_spended_by: MSR
+salary_mode: UPI
+reason: 
+others_amount: 
+others_spended_by: MSR
+others_mode: UPI
+amount: 11432
+spended_by: 
+mode: 
+Inserting unpaid spending (NULL spended_by and mode)
+Found 29 paid spendings
+Found 15 unpaid spendings
+Total spent: 450248.00
+Total unpaid: 202744.00
+=== FORM DATA ===
+date: 2025-08-24
+vehicle_id: 6
+category: diesel
+diesel_payment_status: Unpaid
+diesel_amount: 
+diesel_spended_by: MSR
+diesel_mode: UPI
+unpaid_diesel_amount: 13800
+salary_amount: 
+salary_spended_by: MSR
+salary_mode: UPI
+reason: 
+others_amount: 
+others_spended_by: MSR
+others_mode: UPI
+amount: 13800
+spended_by: 
+mode: 
+Inserting unpaid spending (NULL spended_by and mode)
+Found 29 paid spendings
+Found 16 unpaid spendings
+Total spent: 450248.00
+Total unpaid: 216544.00
+=== FORM DATA ===
+date: 2025-08-30
+vehicle_id: 6
+category: diesel
+diesel_payment_status: Unpaid
+diesel_amount: 
+diesel_spended_by: MSR
+diesel_mode: UPI
+unpaid_diesel_amount: 13501
+salary_amount: 
+salary_spended_by: MSR
+salary_mode: UPI
+reason: 
+others_amount: 
+others_spended_by: MSR
+others_mode: UPI
+amount: 13501
+spended_by: 
+mode: 
+Inserting unpaid spending (NULL spended_by and mode)
+Found 29 paid spendings
+Found 17 unpaid spendings
+Total spent: 450248.00
+Total unpaid: 230045.00
+Found 29 paid spendings
+Found 16 unpaid spendings
+Total spent: 450248.00
+Total unpaid: 214706.00
+=== FORM DATA ===
+date: 2025-08-13
+vehicle_id: 2
+category: diesel
+diesel_payment_status: Unpaid
+diesel_amount: 
+diesel_spended_by: MSR
+diesel_mode: UPI
+unpaid_diesel_amount: 13500
+salary_amount: 
+salary_spended_by: MSR
+salary_mode: UPI
+reason: 
+others_amount: 
+others_spended_by: MSR
+others_mode: UPI
+amount: 13500
+spended_by: 
+mode: 
+Inserting unpaid spending (NULL spended_by and mode)
+Found 29 paid spendings
+Found 17 unpaid spendings
+Total spent: 450248.00
+Total unpaid: 228206.00
+Found 46 paid spendings
+Found 0 unpaid spendings
+Total spent: 678454.00
+Total unpaid: 0
+=== FORM DATA ===
+date: 2025-08-01
+vehicle_id: 1
+category: diesel
+diesel_payment_status: Paid
+diesel_amount: 5000
+diesel_spended_by: MSR
+diesel_mode: UPI
+unpaid_diesel_amount: 
+salary_amount: 
+salary_spended_by: MSR
+salary_mode: UPI
+reason: 
+others_amount: 
+others_spended_by: MSR
+others_mode: UPI
+amount: 5000
+spended_by: MSR
+mode: UPI
+Inserting paid spending: spended_by=MSR, mode=UPI
+Found 47 paid spendings
+Found 0 unpaid spendings
+Total spent: 683454.00
+Total unpaid: 0
+=== FORM DATA ===
+date: 2025-08-02
+vehicle_id: 4
+category: diesel
+diesel_payment_status: Paid
+diesel_amount: 10000
+diesel_spended_by: MSR
+diesel_mode: UPI
+unpaid_diesel_amount: 
+salary_amount: 
+salary_spended_by: MSR
+salary_mode: UPI
+reason: 
+others_amount: 
+others_spended_by: MSR
+others_mode: UPI
+amount: 10000
+spended_by: MSR
+mode: UPI
+Inserting paid spending: spended_by=MSR, mode=UPI
+Found 48 paid spendings
+Found 0 unpaid spendings
+Total spent: 693454.00
+Total unpaid: 0
+=== FORM DATA ===
+date: 2025-08-03
+vehicle_id: 1
+category: diesel
+diesel_payment_status: Paid
+diesel_amount: 14848
+diesel_spended_by: MSR
+diesel_mode: UPI
+unpaid_diesel_amount: 
+salary_amount: 
+salary_spended_by: MSR
+salary_mode: UPI
+reason: 
+others_amount: 
+others_spended_by: MSR
+others_mode: UPI
+amount: 14848
+spended_by: MSR
+mode: UPI
+Inserting paid spending: spended_by=MSR, mode=UPI
+Found 49 paid spendings
+Found 0 unpaid spendings
+Total spent: 708302.00
+Total unpaid: 0
+Found 49 paid spendings
+Found 0 unpaid spendings
+Total spent: 708302.00
+Total unpaid: 0
+=== FORM DATA ===
+date: 2025-08-03
+vehicle_id: 2
+category: diesel
+diesel_payment_status: Paid
+diesel_amount: 10000
+diesel_spended_by: MSR
+diesel_mode: UPI
+unpaid_diesel_amount: 
+salary_amount: 
+salary_spended_by: MSR
+salary_mode: UPI
+reason: 
+others_amount: 
+others_spended_by: MSR
+others_mode: UPI
+amount: 10000
+spended_by: MSR
+mode: UPI
+Inserting paid spending: spended_by=MSR, mode=UPI
+Found 50 paid spendings
+Found 0 unpaid spendings
+Total spent: 718302.00
+Total unpaid: 0
+=== FORM DATA ===
+date: 2025-08-06
+vehicle_id: 6
+category: diesel
+diesel_payment_status: Paid
+diesel_amount: 15501
+diesel_spended_by: MSR
+diesel_mode: UPI
+unpaid_diesel_amount: 
+salary_amount: 
+salary_spended_by: MSR
+salary_mode: UPI
+reason: 
+others_amount: 
+others_spended_by: MSR
+others_mode: UPI
+amount: 15501
+spended_by: MSR
+mode: UPI
+Inserting paid spending: spended_by=MSR, mode=UPI
+Found 51 paid spendings
+Found 0 unpaid spendings
+Total spent: 733803.00
+Total unpaid: 0
+=== FORM DATA ===
+date: 2025-08-07
+vehicle_id: 1
+category: diesel
+diesel_payment_status: Paid
+diesel_amount: 13549
+diesel_spended_by: MSR
+diesel_mode: UPI
+unpaid_diesel_amount: 
+salary_amount: 
+salary_spended_by: MSR
+salary_mode: UPI
+reason: 
+others_amount: 
+others_spended_by: MSR
+others_mode: UPI
+amount: 13549
+spended_by: MSR
+mode: UPI
+Inserting paid spending: spended_by=MSR, mode=UPI
+Found 52 paid spendings
+Found 0 unpaid spendings
+Total spent: 747352.00
+Total unpaid: 0
+=== FORM DATA ===
+date: 2025-08-11
+vehicle_id: 2
+category: diesel
+diesel_payment_status: Paid
+diesel_amount: 5000
+diesel_spended_by: MSR
+diesel_mode: UPI
+unpaid_diesel_amount: 
+salary_amount: 
+salary_spended_by: MSR
+salary_mode: UPI
+reason: 
+others_amount: 
+others_spended_by: MSR
+others_mode: UPI
+amount: 5000
+spended_by: MSR
+mode: UPI
+Inserting paid spending: spended_by=MSR, mode=UPI
+Found 53 paid spendings
+Found 0 unpaid spendings
+Total spent: 752352.00
+Total unpaid: 0
+=== FORM DATA ===
+date: 2025-08-12
+vehicle_id: 4
+category: diesel
+diesel_payment_status: Paid
+diesel_amount: 15000
+diesel_spended_by: MSR
+diesel_mode: UPI
+unpaid_diesel_amount: 
+salary_amount: 
+salary_spended_by: MSR
+salary_mode: UPI
+reason: 
+others_amount: 
+others_spended_by: MSR
+others_mode: UPI
+amount: 15000
+spended_by: MSR
+mode: UPI
+Inserting paid spending: spended_by=MSR, mode=UPI
+Found 54 paid spendings
+Found 0 unpaid spendings
+Total spent: 767352.00
+Total unpaid: 0
+=== FORM DATA ===
+date: 2025-08-12
+vehicle_id: 6
+category: diesel
+diesel_payment_status: Paid
+diesel_amount: 16000
+diesel_spended_by: MSR
+diesel_mode: UPI
+unpaid_diesel_amount: 
+salary_amount: 
+salary_spended_by: MSR
+salary_mode: UPI
+reason: 
+others_amount: 
+others_spended_by: MSR
+others_mode: UPI
+amount: 16000
+spended_by: MSR
+mode: UPI
+Inserting paid spending: spended_by=MSR, mode=UPI
+Found 55 paid spendings
+Found 0 unpaid spendings
+Total spent: 783352.00
+Total unpaid: 0
+Found 55 paid spendings
+Found 0 unpaid spendings
+Total spent: 783352.00
+Total unpaid: 0
+=== FORM DATA ===
+date: 2025-08-19
+vehicle_id: 15
+category: diesel
+diesel_payment_status: Paid
+diesel_amount: 2000
+diesel_spended_by: MSR
+diesel_mode: UPI
+unpaid_diesel_amount: 
+salary_amount: 
+salary_spended_by: MSR
+salary_mode: UPI
+reason: 
+others_amount: 
+others_spended_by: MSR
+others_mode: UPI
+amount: 2000
+spended_by: MSR
+mode: UPI
+Inserting paid spending: spended_by=MSR, mode=UPI
+Found 56 paid spendings
+Found 0 unpaid spendings
+Total spent: 785352.00
+Total unpaid: 0
+=== FORM DATA ===
+date: 2025-08-19
+vehicle_id: 4
+category: diesel
+diesel_payment_status: Paid
+diesel_amount: 10000
+diesel_spended_by: MSR
+diesel_mode: UPI
+unpaid_diesel_amount: 
+salary_amount: 
+salary_spended_by: MSR
+salary_mode: UPI
+reason: 
+others_amount: 
+others_spended_by: MSR
+others_mode: UPI
+amount: 10000
+spended_by: MSR
+mode: UPI
+Inserting paid spending: spended_by=MSR, mode=UPI
+Found 57 paid spendings
+Total unpaid: 0
